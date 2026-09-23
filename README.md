@@ -11,7 +11,7 @@ circles), so bring your own brand; don't ship another company's logo without per
 
 ```swift
 let card = KitoWalletCard(name: "Everyday", mark: .wordmark("NOVA", italic: true), last4: "4120",
-                          holder: "Amina Mwangi", expiry: "09/29", balance: 7_450, style: .ocean)
+                          holder: "Wycliff N", expiry: "09/29", balance: 7_450, style: .ocean)
 
 KitoWalletCardView(card: card)                                   // front
 KitoWalletCardView(card: card, isFlipped: true, cvv: "123")      // flips to the back
