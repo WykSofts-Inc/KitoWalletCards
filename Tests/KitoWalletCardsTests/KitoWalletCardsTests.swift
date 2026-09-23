@@ -13,7 +13,7 @@ import SwiftUI
 final class KitoWalletCardsTests: XCTestCase {
     private func cards(_ balances: [Double]) -> [KitoWalletCard] {
         balances.enumerated().map { index, balance in
-            KitoWalletCard(id: "\(index)", name: "Card \(index)", mark: .wordmark("NOVA"), last4: "412\(index)", holder: "A. Mwangi", expiry: "09/29", balance: balance, style: .ocean)
+            KitoWalletCard(id: "\(index)", name: "Card \(index)", mark: .wordmark("NOVA"), last4: "412\(index)", holder: "Wycliff N", expiry: "09/29", balance: balance, style: .ocean)
         }
     }
 
