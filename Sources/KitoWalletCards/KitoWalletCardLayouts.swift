@@ -106,6 +106,8 @@ public struct KitoWalletCardCarousel: View {
     let showsBalance: Bool
     let cardOverlay: ((KitoWalletCard) -> AnyView)?
 
+    @Environment(\.layoutDirection) private var layoutDirection
+
     public init(cards: [KitoWalletCard], selection: Binding<KitoWalletCard.ID?>, showsBalance: Bool = true) {
         self.cards = cards
         _selection = selection
@@ -131,6 +133,8 @@ public struct KitoWalletCardCarousel: View {
     }
 
     public var body: some View {
+        // Scroll phases are measured on screen but rotations mirror, so flip the turn in right-to-left.
+        let turn: Double = layoutDirection == .rightToLeft ? 22 : -22
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 14) {
                 ForEach(cards) { card in
@@ -149,7 +153,7 @@ public struct KitoWalletCardCarousel: View {
                         .scrollTransition(.interactive, axis: .horizontal) { view, phase in
                             view
                                 .scaleEffect(1 - min(abs(phase.value), 1) * 0.12)
-                                .rotation3DEffect(.degrees(phase.value * -22), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                                .rotation3DEffect(.degrees(phase.value * turn), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
                                 .opacity(1 - min(abs(phase.value), 1) * 0.35)
                         }
                 }
@@ -218,6 +222,7 @@ public struct KitoWalletCardDeck: View {
     let onChange: (KitoWalletCard) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
 
     public init(cards: [KitoWalletCard], onChange: @escaping (KitoWalletCard) -> Void = { _ in }) {
         _order = State(initialValue: cards)
@@ -242,13 +247,20 @@ public struct KitoWalletCardDeck: View {
         .accessibilityAction(named: "Next card") { advance() }
     }
 
+    /// Drags are measured on screen but offsets mirror in right-to-left layouts; flip the width so
+    /// the card follows the finger.
+    private func layoutTranslation(_ physical: CGSize) -> CGSize {
+        layoutDirection == .rightToLeft ? CGSize(width: -physical.width, height: physical.height) : physical
+    }
+
     private var swipe: some Gesture {
         DragGesture()
-            .onChanged { drag = $0.translation }
+            .onChanged { drag = layoutTranslation($0.translation) }
             .onEnded { value in
-                if abs(value.translation.width) > 100 || abs(value.predictedEndTranslation.width) > 240 {
+                let translation = layoutTranslation(value.translation)
+                if abs(translation.width) > 100 || abs(value.predictedEndTranslation.width) > 240 {
                     withAnimation(cardSpring(reduceMotion)) {
-                        drag = CGSize(width: value.translation.width > 0 ? 500 : -500, height: value.translation.height)
+                        drag = CGSize(width: translation.width > 0 ? 500 : -500, height: translation.height)
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
                         drag = .zero
@@ -282,6 +294,7 @@ struct KitoCardTilt: ViewModifier {
     let maxAngle: Double
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
     @State private var tilt: CGSize = .zero
     @State private var size: CGSize = .zero
 
@@ -304,7 +317,9 @@ struct KitoCardTilt: ViewModifier {
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         guard !reduceMotion, size.width > 0, size.height > 0 else { return }
-                        let x = (value.location.x / size.width - 0.5) * 2
+                        // The touch is on-screen; the tilt and highlight mirror in right-to-left layouts.
+                        let locationX = layoutDirection == .rightToLeft ? size.width - value.location.x : value.location.x
+                        let x = (locationX / size.width - 0.5) * 2
                         let y = (value.location.y / size.height - 0.5) * 2
                         withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.8)) {
                             tilt = CGSize(width: min(max(x, -1), 1), height: min(max(y, -1), 1))
