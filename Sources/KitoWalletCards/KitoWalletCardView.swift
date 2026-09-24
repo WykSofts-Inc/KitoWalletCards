@@ -228,6 +228,8 @@ struct KitoWalletCardPatternView: View {
                 context.fill(path, with: .linearGradient(Gradient(colors: [.white.opacity(0.28), .white.opacity(0)]), startPoint: CGPoint(x: size.width * 0.5, y: 0), endPoint: CGPoint(x: size.width * 0.3, y: size.height)))
             }
         }
+        // Canvas draws left-to-right; flip it so the pattern mirrors with the rest of the card.
+        .flipsForRightToLeftLayoutDirection(true)
         .allowsHitTesting(false)
     }
 }

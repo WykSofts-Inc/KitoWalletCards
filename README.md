@@ -44,6 +44,13 @@ KitoWalletCardDeck(cards: cards)
 
 Every animation falls back to a plain ease with Reduce Motion.
 
+## Right-to-left
+
+Card faces, the stack, fan and carousel mirror with the layout direction (the card pattern flips with
+them). The carousel's neighbours still turn to face the centre, the deck's top card follows your
+finger when you swipe it away, and `kitoCardTilt()` tilts towards the finger with the highlight on
+the same side, in either direction.
+
 ## Installation
 
 ```swift
