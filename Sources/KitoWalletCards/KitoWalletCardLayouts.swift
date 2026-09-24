@@ -104,11 +104,30 @@ public struct KitoWalletCardCarousel: View {
     let cards: [KitoWalletCard]
     @Binding var selection: KitoWalletCard.ID?
     let showsBalance: Bool
+    let cardOverlay: ((KitoWalletCard) -> AnyView)?
 
     public init(cards: [KitoWalletCard], selection: Binding<KitoWalletCard.ID?>, showsBalance: Bool = true) {
         self.cards = cards
         _selection = selection
         self.showsBalance = showsBalance
+        self.cardOverlay = nil
+    }
+
+    /// A carousel that draws `cardOverlay` over each card, clipped to the card's rounded shape
+    /// and moving with it through the scroll effect. Use it for per-card state such as a
+    /// frosted "Frozen" layer or a "Default" tag.
+    ///
+    /// ```swift
+    /// KitoWalletCardCarousel(cards: cards, selection: $selected) { card in
+    ///     if frozen.contains(card.id) { FrostOverlay() }
+    /// }
+    /// ```
+    public init<Overlay: View>(cards: [KitoWalletCard], selection: Binding<KitoWalletCard.ID?>, showsBalance: Bool = true,
+                               @ViewBuilder cardOverlay: @escaping (KitoWalletCard) -> Overlay) {
+        self.cards = cards
+        _selection = selection
+        self.showsBalance = showsBalance
+        self.cardOverlay = { AnyView(cardOverlay($0)) }
     }
 
     public var body: some View {
@@ -116,6 +135,15 @@ public struct KitoWalletCardCarousel: View {
             LazyHStack(spacing: 14) {
                 ForEach(cards) { card in
                     KitoWalletCardView(card: card, showsBalance: showsBalance)
+                        .overlay {
+                            if let cardOverlay {
+                                GeometryReader { geometry in
+                                    cardOverlay(card)
+                                        .frame(width: geometry.size.width, height: geometry.size.height)
+                                        .clipShape(RoundedRectangle(cornerRadius: card.style.cornerRadius * geometry.size.width / 320, style: .continuous))
+                                }
+                            }
+                        }
                         .shadow(color: .black.opacity(0.22), radius: 14, y: 8)
                         .containerRelativeFrame(.horizontal) { width, _ in width * 0.8 }
                         .scrollTransition(.interactive, axis: .horizontal) { view, phase in
